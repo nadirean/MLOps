@@ -1,1 +1,1 @@
-# MLOps-lab1
+# MLOps laboratorium 1
