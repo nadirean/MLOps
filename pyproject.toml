@@ -1,0 +1,16 @@
+[project]
+name = "mlops-homework1"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "clean-text>=0.6.0",
+    "joblib>=1.5.2",
+    "scikit-learn>=1.7.2",
+    "transformers>=4.57.0",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+]
