@@ -205,3 +205,8 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Lab4 specific
+data/
+milvus_db/volumes/
+images/
