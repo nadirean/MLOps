@@ -1,0 +1,12 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install ONNX Runtime and other dependencies
+RUN pip install --no-cache-dir onnxruntime transformers fastapi uvicorn
+
+COPY app_onnx.py /app/
+# We assume the model file is in the same directory as the Dockerfile when building
+COPY model_optimized.onnx /app/
+
+CMD ["uvicorn", "app_onnx:app", "--host", "0.0.0.0", "--port", "8000"]
