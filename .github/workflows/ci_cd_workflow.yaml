@@ -1,0 +1,29 @@
+name: CI/CD workflow
+
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: mlops-lab11/sentiment-app-onnx
+  S3_BUCKET: mlops-lab11-models-wbart
+
+jobs:
+  integration:
+    name: checks_and_tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install integration deps
+        run: uv sync --group integration
+
+      - name: Ruff
+        run: ruff check
+
+      - name: Run tests
+        run: pytest tests
