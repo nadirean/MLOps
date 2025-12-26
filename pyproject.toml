@@ -1,0 +1,28 @@
+[project]
+name = "mlops-lab11"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+dependencies = [
+    "skl2onnx>=1.19.1",
+    "torch>=2.9.1",
+    "transformers>=4.57.3",
+]
+
+[dependency-groups]
+integration = [
+  "pytest>=8.0",
+  "ruff>=0.14.9",
+]
+
+inference = [
+  "onnxruntime>=1.15.0",
+  "tokenizers>=0.15.0",
+  "fastapi>=0.115.0",
+  "pydantic>=2.9.0",
+  "numpy>=1.26.0",
+]
+
+deployment = [
+  "boto3>=1.26.0",
+]
