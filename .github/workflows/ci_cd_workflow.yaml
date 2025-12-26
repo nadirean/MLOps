@@ -6,7 +6,7 @@ on:
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: mlops-lab11/sentiment-app-onnx
-  S3_BUCKET: mlops-lab11-models-wbart
+  S3_BUCKET: mlops-lab11-models-wbart1
 
 jobs:
   integration:
