@@ -2,6 +2,15 @@ name: CI/CD workflow
 
 on:
   workflow_dispatch:
+    inputs:
+      steps:
+        description: 'What steps to run in the pipeline'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - integration
+          - all
 
 env:
   AWS_REGION: us-east-1
@@ -11,6 +20,7 @@ env:
 jobs:
   integration:
     name: checks_and_tests
+    if: ${{ inputs.steps == 'all' || inputs.steps == 'integration' }}
     runs-on: ubuntu-latest
     steps:
       - name: Free disk space
@@ -39,6 +49,7 @@ jobs:
   deployment:
     name: deploy_to_aws
     needs: integration
+    if: ${{ inputs.steps == 'all' && needs.integration.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Free disk space
