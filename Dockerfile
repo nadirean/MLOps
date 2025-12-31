@@ -24,6 +24,9 @@ COPY src ./src
 # Copy model artifacts (ONNX + tokenizer.json + classifier.joblib)
 COPY model ./model
 
+# Add sentiment_app and root to PYTHONPATH so "app.handler" and "src" can be found
+ENV PYTHONPATH="/app/sentiment_app:/app"
+
 # Lambda entrypoint
 ENTRYPOINT ["python", "-m", "awslambdaric"]
-CMD ["sentiment_app.app.handler"]
+CMD ["app.handler"]

@@ -1,5 +1,5 @@
 import boto3
-from settings import get_settings
+from .settings import get_settings
 
 
 def main():

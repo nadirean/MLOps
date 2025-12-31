@@ -27,3 +27,90 @@ jobs:
 
       - name: Run tests
         run: uv run pytest sentiment_app/test_app.py
+
+  deployment:
+    name: deploy_to_aws
+    needs: integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install deployment deps
+        run: uv sync --group deployment --group inference
+
+      - name: Download artifacts
+        run: uv run python main.py download
+
+      - name: Export models to ONNX
+        run: uv run python main.py export
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          mask-password: 'true'
+
+      - name: Build and Push Docker image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $REPOSITORY:$IMAGE_TAG .
+          docker tag $REPOSITORY:$IMAGE_TAG $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Delete stack if in rollback state
+        run: |
+          STATUS=$(aws cloudformation describe-stacks \
+            --stack-name sentiment-app-stack \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Stacks[0].StackStatus' \
+            --output text 2>/dev/null || echo "NOT_FOUND")
+
+          echo "Current stack status: $STATUS"
+
+          case "$STATUS" in
+            *ROLLBACK* )
+              aws cloudformation delete-stack --stack-name sentiment-app-stack --region ${{ env.AWS_REGION }}
+              aws cloudformation wait stack-delete-complete --stack-name sentiment-app-stack --region ${{ env.AWS_REGION }}
+              ;;
+          esac
+
+      - name: Resolve Lambda role ARN from name
+        id: lambda_role
+        run: |
+          ROLE_NAME="LabRole"
+          ROLE_ARN=$(aws iam get-role --role-name "$ROLE_NAME" --query 'Role.Arn' --output text)
+          echo "Resolved role ARN: $ROLE_ARN"
+          echo "role_arn=$ROLE_ARN" >> $GITHUB_OUTPUT
+
+      - name: Deploy with AWS SAM
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          sam deploy \
+            --template-file sam-template.yaml \
+            --stack-name sentiment-app-stack \
+            --image-repository $REGISTRY/$REPOSITORY \
+            --parameter-overrides \
+              ImageUri=$REGISTRY/$REPOSITORY:$IMAGE_TAG \
+              LambdaExecutionRoleArn=${{ steps.lambda_role.outputs.role_arn }} \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --region ${{ env.AWS_REGION }}
