@@ -6,11 +6,13 @@ import onnxruntime as ort
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, field_validator
 from tokenizers import Tokenizer
+from mangum import Mangum
 
-from settings import get_settings
+from src.scripts.settings import get_settings
 
 settings = get_settings()
 app = FastAPI()
+handler = Mangum(app)
 
 
 def _load_tokenizer(path: Path) -> Optional[Tokenizer]:
