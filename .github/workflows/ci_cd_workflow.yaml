@@ -23,7 +23,7 @@ jobs:
         run: uv sync --group integration
 
       - name: Ruff
-        run: ruff check
+        run: uv run ruff check
 
       - name: Run tests
-        run: pytest tests
+        run: uv run pytest sentiment_app/test_app.py
