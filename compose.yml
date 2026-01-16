@@ -30,6 +30,15 @@ x-airflow-common: &airflow-common
     AIRFLOW__STANDARD__VENV_INSTALL_METHOD: "uv"
     UV_CACHE_DIR: /opt/airflow/.uv-cache
 
+    AIRFLOW__CORE__XCOM_BACKEND: "airflow.providers.common.io.xcom.backend.XComObjectStorageBackend"
+    AIRFLOW__COMMON_IO__XCOM_OBJECTSTORAGE_PATH: "s3://aws_default@airflow-xcom/xcom"
+    AIRFLOW__COMMON_IO__XCOM_OBJECTSTORAGE_THRESHOLD: "0"  # threshold 0 = all files are stored in S3
+
+    AIRFLOW_CONN_AWS_DEFAULT: 'aws://test:test@?endpoint_url=http%3A%2F%2Flocalstack%3A4566&region_name=us-east-1'
+
+    AIRFLOW_VAR_TWELVEDATA_API_KEY: "${TWELVEDATA_API_KEY}"
+    AIRFLOW_CONN_STORAGE_DB: "postgresql+psycopg2://storage_user:storage_password@postgres-storage/storage_db"
+
   volumes:
     # volumes to sync local environment and containers
     - ./dags:/opt/airflow/dags
@@ -43,6 +52,10 @@ x-airflow-common: &airflow-common
     postgres:
       condition: service_healthy
     valkey:
+      condition: service_healthy
+    localstack:
+      condition: service_healthy
+    postgres-storage:
       condition: service_healthy
 
 services:
@@ -64,6 +77,38 @@ services:
     image: valkey/valkey:9
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
+    restart: always
+
+  localstack:
+    image: localstack/localstack:3.0.0
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      SERVICES: "s3"  # just S3 service
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./localstack-init:/etc/localstack/init
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health" ]
+      interval: 10s
+      retries: 10
+    restart: always
+
+  postgres-storage:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: storage_user
+      POSTGRES_PASSWORD: storage_password
+      POSTGRES_DB: storage_db
+    volumes:
+      - postgres-storage-db-volume:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "storage_user" ]
+      interval: 10s
+      retries: 5
     restart: always
 
   airflow-init:
@@ -127,4 +172,6 @@ services:
 
 volumes:
   postgres-db-volume:
+  postgres-storage-db-volume:
   uv-cache:
+  localstack_data:

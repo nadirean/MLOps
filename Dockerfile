@@ -8,4 +8,4 @@ WORKDIR /opt/airflow
 COPY pyproject.toml uv.lock ./
 RUN uv pip install --system pyproject.toml --group airflow_common
 
-USER airflowd
+USER airflow
