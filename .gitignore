@@ -2,3 +2,4 @@
 .venv/
 vllm/
 __pycache__/
+data/
