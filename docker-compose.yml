@@ -1,0 +1,59 @@
+services:
+  vllm:
+    build:
+      context: ./vllm
+      dockerfile: docker/Dockerfile.cpu
+      target: vllm-openai
+      args:
+        max_jobs: "2"
+        VLLM_CPU_DISABLE_AVX512: "1"
+        VLLM_CPU_AVX512BF16: "0"
+        VLLM_CPU_AVX512VNNI: "0"
+        VLLM_CPU_AMXBF16: "0"
+    environment:
+      - VLLM_TARGET_DEVICE=cpu
+      - VLLM_CPU_OMP_THREADS_BIND=nobind
+      - VLLM_CPU_NUM_OF_RESERVED_CPU=0
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    ports:
+      - "8000:8000"
+    command: ["--model", "${VLLM_MODEL:-Qwen/Qwen3-0.6B}", "--port", "8000", "--max-model-len", "4096", "--max-num-seqs", "1", "--enable-auto-tool-choice", "--tool-call-parser", "hermes"]
+
+  weather-mcp:
+    build: .
+    container_name: weather-mcp
+    environment:
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+    ports:
+      - "8002:8002"
+    command: ["python", "homework_ow_mcp.py"]
+    depends_on:
+      - vllm
+
+  tavily-mcp:
+    build: .
+    container_name: tavily-mcp
+    environment:
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+    ports:
+      - "8003:8003"
+    command: ["python", "homework_tavily_mcp.py"]
+    depends_on:
+      - vllm
+
+  app:
+    build:
+      context: .
+    container_name: trip-planner-app
+    environment:
+      - VLLM_BASE_URL=http://vllm:8000/v1
+      - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+    tty: true
+    stdin_open: true
+    depends_on:
+      - vllm
+      - weather-mcp
+      - tavily-mcp
+    command: ["python", "homework.py"]
