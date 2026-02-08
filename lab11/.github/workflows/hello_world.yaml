@@ -1,0 +1,17 @@
+name: Hello World workflow
+on:
+  # workflow_dispatch option enables manual trigger button
+  workflow_dispatch:
+
+# under job key we define the names and jobs definitions, typically as multiple steps
+# e.g. what commands to run, what environment to set
+jobs:
+  # our job name: `hello-world-job`
+  hello-world-job:
+    # our job definition
+    runs-on: ubuntu-latest # here, define image on which we will run our job
+
+    # definitions of all job steps
+    steps:
+      - name: Print Hello World # step name, displayed on UI
+        run: echo "Hello world" # print "Hello world!" here
