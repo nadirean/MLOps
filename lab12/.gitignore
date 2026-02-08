@@ -1,0 +1,8 @@
+.env
+data
+simple_auth_manager_passwords.json.generated
+logs/
+*.db*
+
+__pycache__/
+.DS_Store
