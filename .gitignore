@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Python (global safety net; each lab has its own .gitignore)
+__pycache__/
+*.py[codz]
+.venv/
+venv/
+env/
+
+# Regenerated local configs
+lab12/airflow/

@@ -136,7 +136,9 @@ celerybeat.pid
 
 # Environments
 .env
+.env.*
 .envrc
+.DS_Store
 .venv
 env/
 venv/
