@@ -257,7 +257,7 @@ cp .env.example .env        # add TWELVEDATA_API_KEY
 docker compose up           # Airflow UI at :8080 (airflow/airflow)
 ```
 
-Trigger DAGs manually or via backfill. Static keys in `compose.yml` / `config/airflow.cfg` are local-dev placeholders ("fake security for local setup") - use a secret backend in production; pipeline credentials (AWS/LocalStack, Postgres) are local-dev defaults.
+Trigger DAGs manually or via backfill. Static keys in `compose.yml` / `config/airflow.cfg` are local-dev placeholders - should use a secret backend in production; pipeline credentials (AWS/LocalStack, Postgres) are local-dev defaults.
 
 ---
 
